@@ -10,3 +10,4 @@ coverage
 apps/api/generated
 apps/api/prisma/*.db
 apps/web/.vite
+.codex-*.log
