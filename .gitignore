@@ -1,0 +1,12 @@
+node_modules
+dist
+build
+.turbo
+.cache
+.env
+.env.local
+.DS_Store
+coverage
+apps/api/generated
+apps/api/prisma/*.db
+apps/web/.vite

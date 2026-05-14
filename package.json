@@ -1,0 +1,20 @@
+{
+  "name": "cosmetics-crm",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@9.15.4",
+  "scripts": {
+    "dev": "pnpm --filter @cosmetics-crm/shared build && pnpm --parallel --filter @cosmetics-crm/api --filter @cosmetics-crm/web dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "db:generate": "pnpm --filter @cosmetics-crm/api db:generate",
+    "db:push": "pnpm --filter @cosmetics-crm/api db:push",
+    "db:migrate": "pnpm --filter @cosmetics-crm/api db:migrate",
+    "db:seed": "pnpm --filter @cosmetics-crm/api db:seed"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}

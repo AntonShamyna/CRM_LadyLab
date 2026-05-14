@@ -1,0 +1,226 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  MANAGER
+}
+
+enum OrderStatus {
+  ON_ASSEMBLY
+  AWAITING_PAYMENT
+  CLOSED
+  RETURNED
+  CANCELLED
+}
+
+enum DeliveryService {
+  BELPOST
+  EUROPOST
+  CDEK
+  AUTOLIGHT
+  PICKUP
+}
+
+enum PaymentMethod {
+  CASH_ON_DELIVERY
+  CASH
+  CASHLESS
+}
+
+enum ProductUnit {
+  G
+  ML
+  KG
+  PCS
+}
+
+enum ReminderStatus {
+  ACTIVE
+  DONE
+  CANCELLED
+}
+
+enum ReturnStockAction {
+  RETURN_TO_STOCK
+  WRITE_OFF
+}
+
+model User {
+  id               String               @id @default(cuid())
+  login            String               @unique
+  passwordHash     String
+  refreshTokenHash String?
+  role             Role
+  isActive         Boolean              @default(true)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  createdOrders    Order[]              @relation("OrderCreatedBy")
+  statusChanges    OrderStatusHistory[] @relation("StatusChangedBy")
+  reminders        Reminder[]           @relation("ReminderAssignedTo")
+  expenses         Expense[]            @relation("ExpenseCreatedBy")
+}
+
+model Customer {
+  id                      String     @id @default(cuid())
+  lastName                String
+  firstName               String
+  middleName              String?
+  phone                   String
+  city                    String
+  address                 String
+  birthDate               DateTime?
+  note                    String?
+  personalDiscountPercent Float      @default(0)
+  isRegular               Boolean    @default(false)
+  isBlacklisted           Boolean    @default(false)
+  createdAt               DateTime   @default(now())
+  updatedAt               DateTime   @updatedAt
+  orders                  Order[]
+  reminders               Reminder[]
+
+  @@index([lastName, firstName])
+  @@index([city])
+}
+
+model Product {
+  id             String         @id @default(cuid())
+  name           String
+  volume         Float
+  unit           ProductUnit
+  salePriceKopecks Int
+  aroma          String?
+  color          String?
+  description    String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  batches        ProductBatch[]
+  orderItems     OrderItem[]
+
+  @@index([name])
+  @@index([aroma])
+}
+
+model ProductBatch {
+  id               String      @id @default(cuid())
+  productId        String
+  batchNumber      String
+  stockQuantity    Int
+  costPriceKopecks Int
+  expirationDate   DateTime
+  productionDate   DateTime?
+  comment          String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  product          Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItems       OrderItem[]
+
+  @@unique([productId, batchNumber])
+  @@index([expirationDate])
+}
+
+model Order {
+  id                              String               @id @default(cuid())
+  customerId                      String
+  status                          OrderStatus          @default(ON_ASSEMBLY)
+  deliveryService                 DeliveryService
+  deliveryPriceKopecks            Int
+  paymentMethod                   PaymentMethod
+  discountPercent                 Float                @default(0)
+  productsTotalKopecks            Int
+  discountAmountKopecks           Int
+  productsTotalAfterDiscountKopecks Int
+  totalToPayKopecks               Int
+  comment                         String?
+  createdById                     String
+  createdAt                       DateTime             @default(now())
+  updatedAt                       DateTime             @updatedAt
+  sentAt                          DateTime?
+  paidAt                          DateTime?
+  returnedAt                      DateTime?
+  cancelledAt                     DateTime?
+  returnStockAction               ReturnStockAction?
+  customer                        Customer             @relation(fields: [customerId], references: [id])
+  createdBy                       User                 @relation("OrderCreatedBy", fields: [createdById], references: [id])
+  items                           OrderItem[]
+  statusHistory                   OrderStatusHistory[]
+  reminders                       Reminder[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([customerId])
+}
+
+model OrderItem {
+  id                         String       @id @default(cuid())
+  orderId                    String
+  productId                  String
+  batchId                    String
+  quantity                   Int
+  salePriceSnapshotKopecks   Int
+  costPriceSnapshotKopecks   Int
+  productNameSnapshot        String
+  batchNumberSnapshot        String
+  lineTotalKopecks           Int
+  createdAt                  DateTime     @default(now())
+  order                      Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product                    Product      @relation(fields: [productId], references: [id])
+  batch                      ProductBatch @relation(fields: [batchId], references: [id])
+
+  @@index([productNameSnapshot])
+  @@index([orderId])
+}
+
+model OrderStatusHistory {
+  id          String       @id @default(cuid())
+  orderId     String
+  fromStatus  OrderStatus?
+  toStatus    OrderStatus
+  changedById String
+  comment     String?
+  createdAt   DateTime     @default(now())
+  order       Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  changedBy   User         @relation("StatusChangedBy", fields: [changedById], references: [id])
+
+  @@index([orderId])
+}
+
+model Reminder {
+  id           String         @id @default(cuid())
+  title        String
+  description  String?
+  remindAt     DateTime
+  status       ReminderStatus @default(ACTIVE)
+  assignedToId String
+  customerId   String?
+  orderId      String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  assignedTo   User           @relation("ReminderAssignedTo", fields: [assignedToId], references: [id])
+  customer     Customer?      @relation(fields: [customerId], references: [id])
+  order        Order?         @relation(fields: [orderId], references: [id])
+
+  @@index([remindAt])
+  @@index([status])
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  year        Int
+  month       Int
+  category    String
+  amountKopecks Int
+  comment     String?
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   User     @relation("ExpenseCreatedBy", fields: [createdById], references: [id])
+
+  @@index([year, month])
+}
