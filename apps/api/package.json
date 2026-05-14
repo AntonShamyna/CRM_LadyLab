@@ -15,7 +15,7 @@
     "db:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
-    "@cosmetics-crm/shared": "workspace:*",
+    "@cosmetics-crm/shared": "file:../../packages/shared",
     "@nestjs/common": "^10.4.15",
     "@nestjs/config": "^3.3.0",
     "@nestjs/core": "^10.4.15",

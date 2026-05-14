@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "packageManager": "pnpm@9.15.4",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "pnpm --filter @cosmetics-crm/shared build && pnpm --parallel --filter @cosmetics-crm/api --filter @cosmetics-crm/web dev",
     "build": "pnpm -r build",

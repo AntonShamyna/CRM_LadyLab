@@ -293,7 +293,8 @@ export class OrdersService {
 
   async cancel(id: string, user: RequestUser, dto: StatusActionDto) {
     const order = await this.findOne(id);
-    if (![OrderStatus.ON_ASSEMBLY, OrderStatus.AWAITING_PAYMENT].includes(order.status)) {
+    const cancellableStatuses: OrderStatus[] = [OrderStatus.ON_ASSEMBLY, OrderStatus.AWAITING_PAYMENT];
+    if (!cancellableStatuses.includes(order.status)) {
       throw new BadRequestException('Отменить можно только заказ на сборке или ожидающий оплаты');
     }
 
